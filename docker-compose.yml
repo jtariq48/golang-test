@@ -1,0 +1,55 @@
+version: "3"
+
+services:
+  postgres:
+    image: postgres:13
+    container_name: postgres
+    environment:
+      - POSTGRES_HOST=${DB_HOST:-postgres}
+      - POSTGRES_USER=${DB_USER:-admin}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-root}
+      - POSTGRES_DB=${DB_NAME:-postgres}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - my_network
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: adminpassword
+    ports:
+      - "8088:80" # You can access pgAdmin at http://localhost:8088
+    networks:
+      - my_network
+
+  golang:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: golang-api
+    ports:
+      - "8085:8085"
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_USER=admin
+      - DB_PASSWORD=root
+      - DB_NAME=${DB_NAME:-postgres}
+      - PORT=0.0.0.0:8085
+    depends_on:
+      - postgres
+    networks:
+      - my_network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  my_network:
+    driver: bridge
